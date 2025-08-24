@@ -119,7 +119,7 @@ export const profiles16: Profile[] = [
     tags: ['フィットネス', 'トレーニング', '健康', 'スポーツ'],
     joinedCommunities: ['community-3'],
     photos: [],
-    avatarUrl: 'https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop',
+    avatarUrl: '',
     isVisible: true,
     lastActive: new Date().toISOString(),
     privacy: {
@@ -131,7 +131,7 @@ export const profiles16: Profile[] = [
       showBodyStyle: true,
       showTags: true,
       showBio: true,
-      hidePhoto: false
+      hidePhoto: true
     }
   },
 
