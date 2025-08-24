@@ -362,6 +362,39 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
                 ))}
               </select>
             </div>
+            {/* Gender Identity */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                性自認
+              </label>
+              <select
+                value={formData.genderIdentity}
+                onChange={(e) => handleInputChange('genderIdentity', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+              >
+                <option value="">選択してください</option>
+                {GENDER_IDENTITY_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sexual Orientation */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                性的指向
+              </label>
+              <select
+                value={formData.sexualOrientation}
+                onChange={(e) => handleInputChange('sexualOrientation', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+              >
+                <option value="">選択してください</option>
+                {SEXUAL_ORIENTATION_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
 
             {/* Personality Traits */}
             <div>
