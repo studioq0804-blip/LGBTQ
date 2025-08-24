@@ -638,3 +638,72 @@ export const mockCommunities: Community[] = [
     tags: ['プライド', 'イベント', '東京', 'パレード']
   }
 ];
+
+export const mockPosts: Record<string, any[]> = {
+  'community-1': [
+    {
+      id: 'post-1',
+      text: '新しいアート作品を完成させました！LGBTQ+の多様性をテーマにした絵画です。みなさんの感想をお聞かせください。',
+      author: {
+        displayName: 'ひろき',
+        avatarUrl: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop'
+      },
+      createdAt: '2024-01-22T10:30:00Z',
+      likes: 24,
+      comments: 8,
+      isLiked: false
+    },
+    {
+      id: 'post-2',
+      text: 'プライド月間に向けて、コミュニティアート展示会を企画しています。参加希望の方はコメントください！',
+      author: {
+        displayName: 'けんじ',
+        avatarUrl: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop'
+      },
+      createdAt: '2024-01-21T15:45:00Z',
+      likes: 31,
+      comments: 12,
+      isLiked: true
+    }
+  ],
+  'community-2': [
+    {
+      id: 'post-3',
+      text: 'トランスジェンダーの医療サポートについて情報共有したいと思います。経験のある方、アドバイスをお願いします。',
+      author: {
+        displayName: 'まい',
+        avatarUrl: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop'
+      },
+      createdAt: '2024-01-22T09:15:00Z',
+      likes: 18,
+      comments: 15,
+      isLiked: false
+    }
+  ],
+  'community-3': [
+    {
+      id: 'post-4',
+      text: '今年のプライドパレードの準備が始まりました！ボランティア募集中です。一緒に素晴らしいイベントを作りましょう🌈',
+      author: {
+        displayName: 'あやか',
+        avatarUrl: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop'
+      },
+      createdAt: '2024-01-22T14:20:00Z',
+      likes: 45,
+      comments: 23,
+      isLiked: true
+    },
+    {
+      id: 'post-5',
+      text: 'パレードのルート案を作成しました。皆さんのご意見をお聞かせください。安全で楽しいパレードにしたいです。',
+      author: {
+        displayName: 'だいき',
+        avatarUrl: 'https://images.pexels.com/photos/1040881/pexels-photo-1040881.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop'
+      },
+      createdAt: '2024-01-21T11:30:00Z',
+      likes: 28,
+      comments: 19,
+      isLiked: false
+    }
+  ]
+};

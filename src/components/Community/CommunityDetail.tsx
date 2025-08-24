@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Plus, Heart, MessageCircle, Send, MoreVertical } from 'lucide-react';
 import type { Community, Post } from '../../types';
 import { useLanguage } from '../../hooks/useLanguage';
+import { mockCommunities, mockPosts } from '../../data/mockData';
 
 interface CommunityDetailProps {
   communityId: string;
