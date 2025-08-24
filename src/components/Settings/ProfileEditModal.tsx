@@ -116,12 +116,18 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
       return;
     }
 
+    setIsLoading(true);
     try {
+      console.log('Uploading avatar file:', file.name, file.size);
       const avatarUrl = await profileAPI.uploadAvatar(file);
+      console.log('Avatar upload successful, URL:', avatarUrl);
       setFormData(prev => ({ ...prev, avatarUrl }));
+      alert('写真をアップロードしました！');
     } catch (error) {
       console.error('Avatar upload error:', error);
       alert('画像のアップロードに失敗しました');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -157,6 +163,7 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
 
       // データベースに保存を試行
       try {
+        console.log('Saving profile to database:', updatedProfile);
         await profileAPI.updateProfile({
           user_id: profile.userId,
           display_name: formData.displayName.trim(),
@@ -176,7 +183,8 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
         });
         console.log('Profile updated in database successfully');
       } catch (dbError) {
-        console.log('Database update failed, saving locally only:', dbError);
+        console.error('Database update failed, saving locally only:', dbError);
+        alert('データベース保存に失敗しましたが、ローカルに保存されました');
       }
 
       // ローカルストレージに保存

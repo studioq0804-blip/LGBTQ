@@ -153,7 +153,7 @@ export const profileAPI = {
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -162,12 +162,14 @@ export const profileAPI = {
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      return data.publicUrl;
+      console.log('Avatar uploaded successfully:', urlData.publicUrl);
+      return urlData.publicUrl;
     } catch (error) {
+      console.error('Supabase storage upload failed:', error);
       // フォールバック: Base64データURL
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
