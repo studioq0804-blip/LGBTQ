@@ -27,7 +27,6 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
   const [formData, setFormData] = useState({
     displayName: '',
     bio: '',
-    age: 25,
     ageRange: '',
     city: '',
     height: 170,
@@ -42,6 +41,7 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
   });
   const [selectedPreset, setSelectedPreset] = useState<AvatarPreset>('male');
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // フォームデータを初期化
   useEffect(() => {
@@ -49,7 +49,6 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
       setFormData({
         displayName: profile.displayName || '',
         bio: profile.bio || '',
-        age: profile.age || 25,
         ageRange: profile.ageRange || '',
         city: profile.city || '',
         height: profile.height || 170,
@@ -80,7 +79,7 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
       ...prev,
       tags: prev.tags.includes(tag)
         ? prev.tags.filter(t => t !== tag)
-        : [...prev.tags, tag].slice(0, 8) // 最大8個
+        : [...prev.tags, tag].slice(0, 5) // 最大5個
     }));
   };
 
@@ -95,9 +94,16 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
 
   const handlePresetSelect = (preset: AvatarPreset) => {
     setSelectedPreset(preset);
-    const presetUrl = getPresetAvatarDataUrl(preset, 512);
-    setFormData(prev => ({ ...prev, avatarUrl: presetUrl }));
     localStorage.setItem('rainbow-match-avatar-preset', preset);
+  };
+
+  const handlePhotoToggle = (hidePhoto: boolean) => {
+    setFormData(prev => ({ ...prev, hidePhoto }));
+    if (hidePhoto) {
+      // 写真を非表示にする場合、プリセットアバターを設定
+      const presetUrl = getPresetAvatarDataUrl(selectedPreset, 512);
+      setFormData(prev => ({ ...prev, avatarUrl: presetUrl }));
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,15 +123,30 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
     }
 
     setIsLoading(true);
+    setUploadProgress(0);
+    
     try {
       console.log('Uploading avatar file:', file.name, file.size);
+      
+      // プログレス表示のシミュレーション
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 100);
+      
       const avatarUrl = await profileAPI.uploadAvatar(file);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
       console.log('Avatar upload successful, URL:', avatarUrl);
-      setFormData(prev => ({ ...prev, avatarUrl }));
+      setFormData(prev => ({ ...prev, avatarUrl, hidePhoto: false }));
+      
+      setTimeout(() => setUploadProgress(0), 1000);
       alert('写真をアップロードしました！');
     } catch (error) {
       console.error('Avatar upload error:', error);
       alert('画像のアップロードに失敗しました');
+      setUploadProgress(0);
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +155,7 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.displayName.trim()) {
-      alert('名前を入力してください');
+      alert('表示名を入力してください');
       return;
     }
 
@@ -144,7 +165,6 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
         ...profile,
         displayName: formData.displayName.trim(),
         bio: formData.bio.trim(),
-        age: formData.age,
         ageRange: formData.ageRange,
         city: formData.city,
         height: formData.height,
@@ -222,7 +242,7 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
           </button>
         </div>
 
-        {/* Form Content - Single scrollable page */}
+        {/* Form Content */}
         <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="p-6 space-y-6">
             {/* Avatar Section */}
@@ -232,19 +252,20 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
                   <img
                     src={getPresetAvatarDataUrl(selectedPreset, 512)}
                     alt="アバター"
-                    className="w-full h-full rounded-2xl object-cover"
+                    className="w-full h-full rounded-2xl object-cover border-4 border-gray-200"
                   />
                 ) : (
                   <img
                     src={formData.avatarUrl || getPresetAvatarDataUrl(selectedPreset, 512)}
                     alt="プロフィール写真"
-                    className="w-full h-full rounded-2xl object-cover"
+                    className="w-full h-full rounded-2xl object-cover border-4 border-gray-200"
                   />
                 )}
+                
                 {!formData.hidePhoto && (
                   <label
                     htmlFor="avatar-upload"
-                    className="absolute bottom-0 right-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white hover:bg-purple-700 transition-colors cursor-pointer"
+                    className="absolute bottom-0 right-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white hover:bg-purple-700 transition-colors cursor-pointer shadow-lg"
                   >
                     <Camera size={16} />
                     <input
@@ -258,12 +279,25 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
                 )}
               </div>
 
+              {/* Upload Progress */}
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div className="mb-4">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">アップロード中... {uploadProgress}%</p>
+                </div>
+              )}
+
               <div className="mb-4">
                 <label className="flex items-center justify-center space-x-2 text-sm text-gray-600 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.hidePhoto}
-                    onChange={(e) => handleInputChange('hidePhoto', e.target.checked)}
+                    onChange={(e) => handlePhotoToggle(e.target.checked)}
                     className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                   />
                   <span>写真を非表示にする</span>
@@ -329,7 +363,106 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
               </div>
             </div>
 
-            {/* 性自認 */}
+            {/* Age Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                年代 *
+              </label>
+              <select
+                value={formData.ageRange}
+                onChange={(e) => handleInputChange('ageRange', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                required
+              >
+                <option value="">選択してください</option>
+                {AGE_RANGE_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                18歳以上の年代を選択してください
+              </p>
+            </div>
+
+            {/* City */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                都道府県
+              </label>
+              <select
+                value={formData.city}
+                onChange={(e) => handleInputChange('city', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+              >
+                <option value="">選択してください</option>
+                {PREFECTURES.map(prefecture => (
+                  <option key={prefecture} value={prefecture}>{prefecture}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Height */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                身長
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={formData.height}
+                  onChange={(e) => handleInputChange('height', parseInt(e.target.value) || 170)}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                  min="100"
+                  max="250"
+                  placeholder="170"
+                />
+                <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                  cm
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                任意項目です。100-250cmの範囲で入力してください
+              </p>
+            </div>
+
+            {/* Body Style */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                スタイル・体型
+              </label>
+              <select
+                value={formData.bodyStyle}
+                onChange={(e) => handleInputChange('bodyStyle', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+              >
+                <option value="">選択してください</option>
+                {BODY_STYLE_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                この情報は任意です。プライバシー設定で非表示にもできます。
+              </p>
+            </div>
+
+            {/* Relationship Purpose */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                出会いの目的
+              </label>
+              <select
+                value={formData.relationshipPurpose}
+                onChange={(e) => handleInputChange('relationshipPurpose', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+              >
+                <option value="">選択してください</option>
+                {RELATIONSHIP_PURPOSE_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Gender Identity */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 性自認
@@ -346,7 +479,7 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
               </select>
             </div>
 
-            {/* 性的指向 */}
+            {/* Sexual Orientation */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 性的指向
@@ -414,7 +547,6 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
                 選択済み: {formData.tags.length}/5
               </div>
             </div>
-
           </div>
 
           {/* Footer */}
