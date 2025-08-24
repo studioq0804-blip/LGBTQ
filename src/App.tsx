@@ -232,7 +232,29 @@ function App() {
       otherUser: profile,
       createdAt: new Date().toISOString()
     };
-    localStorage.setItem(`chat-${chatId}`, JSON.stringify(chatData));
+    
+    try {
+      localStorage.setItem(`chat-${chatId}`, JSON.stringify(chatData));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        // ローカルストレージの容量が不足している場合、古いチャットデータを削除
+        console.warn('ローカルストレージの容量が不足しています。古いデータを削除します。');
+        cleanupOldChatData();
+        
+        // 再試行
+        try {
+          localStorage.setItem(`chat-${chatId}`, JSON.stringify(chatData));
+        } catch (retryError) {
+          console.error('チャットデータの保存に失敗しました:', retryError);
+          alert('チャットデータの保存に失敗しました。ブラウザのストレージをクリアしてください。');
+          return;
+        }
+      } else {
+        console.error('チャットデータの保存に失敗しました:', error);
+        alert('チャットデータの保存に失敗しました。');
+        return;
+      }
+    }
     
     // チャットスレッドを作成（データベース用）
     createChatThread(profile).then(result => {
@@ -240,7 +262,11 @@ function App() {
         console.log('💬 チャット作成成功:', result.threadId);
         // データベースのスレッドIDも保存
         const updatedChatData = { ...chatData, dbThreadId: result.threadId };
-        localStorage.setItem(`chat-${chatId}`, JSON.stringify(updatedChatData));
+        try {
+          localStorage.setItem(`chat-${chatId}`, JSON.stringify(updatedChatData));
+        } catch (error) {
+          console.warn('データベースIDの保存に失敗しましたが、チャットは継続できます:', error);
+        }
         setSelectedChatId(chatId);
       } else {
         console.log('データベース保存失敗、ローカルモードで継続:', result.error);
@@ -254,6 +280,37 @@ function App() {
     // プロフィールモーダルを閉じる
     setShowProfileDetail(false);
     setSelectedProfile(null);
+  };
+
+  // 古いチャットデータをクリーンアップする関数
+  const cleanupOldChatData = () => {
+    try {
+      const chatKeys = Object.keys(localStorage).filter(key => key.startsWith('chat-'));
+      
+      // チャットデータを作成日時でソート（古い順）
+      const chatDataWithKeys = chatKeys.map(key => {
+        try {
+          const data = JSON.parse(localStorage.getItem(key) || '{}');
+          return { key, createdAt: data.createdAt || '1970-01-01T00:00:00.000Z' };
+        } catch {
+          return { key, createdAt: '1970-01-01T00:00:00.000Z' };
+        }
+      }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      
+      // 古いチャットデータの半分を削除
+      const deleteCount = Math.max(1, Math.floor(chatDataWithKeys.length / 2));
+      for (let i = 0; i < deleteCount; i++) {
+        const { key } = chatDataWithKeys[i];
+        localStorage.removeItem(key);
+        // 関連するメッセージデータも削除
+        const messageKey = `messages-${key}`;
+        localStorage.removeItem(messageKey);
+      }
+      
+      console.log(`${deleteCount}個の古いチャットデータを削除しました`);
+    } catch (error) {
+      console.error('チャットデータのクリーンアップに失敗しました:', error);
+    }
   };
 
   const handleKYCComplete = async (kycData: any) => {
