@@ -24,67 +24,11 @@ export function useProfiles() {
       if (!supabaseUrl || !supabaseAnonKey || 
           supabaseUrl === 'https://your-project.supabase.co' || 
           supabaseAnonKey === 'your-anon-key') {
-        // Supabase未設定時はEdge Functionからモックデータを取得
-        console.log('Supabase not configured, fetching from Edge Function');
-        try {
-          const params = new URLSearchParams();
-          if (filters?.ageRanges?.length) params.set('ageRanges', filters.ageRanges.join(','));
-          if (filters?.prefectures?.length) params.set('cities', filters.prefectures.join(','));
-          if (filters?.relationshipPurposes?.length) params.set('relationshipPurposes', filters.relationshipPurposes.join(','));
-          if (filters?.sexualOrientations?.length) params.set('sexualOrientations', filters.sexualOrientations.join(','));
-          params.set('limit', '50');
-
-          const response = await fetch(`/functions/v1/mock-profiles?${params.toString()}`);
-          if (!response.ok) throw new Error('Mock API failed');
-          
-          const serverProfiles = await response.json();
-          console.log('Edge Function returned:', serverProfiles.length, 'profiles');
-          
-          // サーバー形式からアプリ形式に変換
-          const convertedProfiles: Profile[] = serverProfiles.map((dbProfile: any) => ({
-            id: dbProfile.id,
-            userId: dbProfile.user_id,
-            displayName: dbProfile.display_name || '',
-            genderIdentity: dbProfile.gender_identity || '',
-            sexualOrientation: dbProfile.sexual_orientation || '',
-            bio: dbProfile.bio || '',
-            age: 25, // 計算が必要な場合は年代から推定
-            ageRange: dbProfile.age_range || '',
-            city: dbProfile.city || '',
-            height: dbProfile.height,
-            bodyStyle: dbProfile.body_style || '',
-            relationshipPurpose: dbProfile.relationship_purpose || '',
-            personalityTraits: dbProfile.personality_traits || [],
-            tags: dbProfile.tags || [],
-            joinedCommunities: [],
-            photos: [],
-            avatarUrl: dbProfile.avatar_url || '',
-            isVisible: dbProfile.is_visible,
-            lastActive: dbProfile.last_active,
-            privacy: dbProfile.privacy_settings || {
-              showGenderIdentity: true,
-              showSexualOrientation: true,
-              showAge: true,
-              showCity: true,
-              showHeight: true,
-              showBodyStyle: true,
-              showTags: true,
-              showBio: true,
-              hidePhoto: false
-            }
-          }));
-          
-          setProfiles(convertedProfiles);
-          setIsLoading(false);
-          return;
-        } catch (edgeFunctionError) {
-          console.error('Edge Function failed:', edgeFunctionError);
-          // 最終フォールバック: ローカルモックデータ
-          console.log('Using final fallback: local mock data');
-          setProfiles(profiles16);
-          setIsLoading(false);
-          return;
-        }
+        // Supabase未設定時はローカルモックデータを使用
+        console.log('Supabase not configured, using local mock data');
+        setProfiles(profiles16);
+        setIsLoading(false);
+        return;
       }
 
       // Try to get profiles from database
