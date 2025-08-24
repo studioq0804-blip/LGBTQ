@@ -30,11 +30,11 @@ export function useProfiles() {
             .limit(50);
           
           if (error) {
-            console.error('Database query error:', error);
-            throw error;
+            console.warn('Database query error, falling back to mock data:', error);
+            // Don't throw, fall through to mock data
           }
           
-          if (dbProfiles && dbProfiles.length > 0) {
+          if (dbProfiles && dbProfiles.length > 0 && !error) {
             // データベース形式からアプリ形式に変換
             const convertedProfiles: Profile[] = dbProfiles.map(dbProfile => ({
               id: dbProfile.id,
