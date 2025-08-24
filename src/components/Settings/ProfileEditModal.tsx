@@ -285,6 +285,24 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
               </div>
             </div>
 
+            {/* Bio */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                自己紹介
+              </label>
+              <textarea
+                value={formData.bio}
+                onChange={(e) => handleInputChange('bio', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none"
+                rows={4}
+                maxLength={300}
+                placeholder="あなたについて教えてください..."
+              />
+              <div className="text-xs text-gray-500 mt-1 text-right">
+                {formData.bio.length}/300
+              </div>
+            </div>
+
             {/* Gender Identity */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -317,24 +335,6 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
-            </div>
-
-            {/* Bio */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                自己紹介
-              </label>
-              <textarea
-                value={formData.bio}
-                onChange={(e) => handleInputChange('bio', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none"
-                rows={4}
-                maxLength={300}
-                placeholder="あなたについて教えてください..."
-              />
-              <div className="text-xs text-gray-500 mt-1 text-right">
-                {formData.bio.length}/300
-              </div>
             </div>
 
             {/* Personality Traits */}
@@ -389,100 +389,6 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
               </div>
             </div>
 
-            {/* Age Range */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                年代 *
-              </label>
-              <select
-                value={formData.ageRange}
-                onChange={(e) => handleInputChange('ageRange', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                required
-              >
-                <option value="">18歳以上の年代を選択してください</option>
-                {AGE_RANGE_OPTIONS.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Prefecture */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                都道府県
-              </label>
-              <select
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-              >
-                <option value="">都道府県を選択してください</option>
-                {PREFECTURES.map(prefecture => (
-                  <option key={prefecture} value={prefecture}>{prefecture}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Height */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                身長
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={formData.height}
-                  onChange={(e) => handleInputChange('height', parseInt(e.target.value) || 170)}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                  min="100"
-                  max="250"
-                />
-                <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500">
-                  cm
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                任意項目です。100-250cmの範囲で入力してください
-              </p>
-            </div>
-
-            {/* Body Style */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                スタイル・体型
-              </label>
-              <select
-                value={formData.bodyStyle}
-                onChange={(e) => handleInputChange('bodyStyle', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-              >
-                <option value="">選択してください</option>
-                {BODY_STYLE_OPTIONS.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                この情報は任意です。プライバシー設定で非表示にもできます。
-              </p>
-            </div>
-
-            {/* Relationship Purpose */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                出会いの目的
-              </label>
-              <select
-                value={formData.relationshipPurpose}
-                onChange={(e) => handleInputChange('relationshipPurpose', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-              >
-                <option value="">選択してください</option>
-                {RELATIONSHIP_PURPOSE_OPTIONS.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </div>
           </div>
 
           {/* Footer */}
