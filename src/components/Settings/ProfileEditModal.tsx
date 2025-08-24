@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, User } from 'lucide-react';
+import { X, Save, Camera, Upload } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { profileAPI } from '../../lib/supabase/api';
 import { 
@@ -100,6 +100,31 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
     localStorage.setItem('rainbow-match-avatar-preset', preset);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // ファイルサイズチェック (5MB制限)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ファイルサイズは5MB以下にしてください');
+      return;
+    }
+
+    // ファイル形式チェック
+    if (!file.type.startsWith('image/')) {
+      alert('画像ファイルを選択してください');
+      return;
+    }
+
+    try {
+      const avatarUrl = await profileAPI.uploadAvatar(file);
+      setFormData(prev => ({ ...prev, avatarUrl }));
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      alert('画像のアップロードに失敗しました');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.displayName.trim()) {
@@ -192,55 +217,59 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
         {/* Form Content - Single scrollable page */}
         <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="p-6 space-y-6">
-            {/* Avatar Selection */}
+            {/* Avatar Section */}
             <div className="text-center">
-              <div className="w-24 h-24 mx-auto mb-4 relative">
-                <img
-                  src={formData.avatarUrl || getPresetAvatarDataUrl(selectedPreset, 512)}
-                  alt="プロフィール写真"
-                  className="w-full h-full rounded-full object-cover border-4 border-purple-200"
-                />
+              <div className="relative w-24 h-24 mx-auto mb-4">
+                <div className="w-full h-full bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden">
+                  <div className="w-16 h-16 bg-teal-600 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-white rounded-full"></div>
+                    <div className="absolute bottom-2 w-12 h-6 bg-teal-600 rounded-t-full"></div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white hover:bg-purple-700 transition-colors"
+                >
+                  <Camera size={16} />
+                </button>
               </div>
 
-              {/* Preset Options */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {(['male', 'female', 'bisexual'] as AvatarPreset[]).map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => handlePresetSelect(preset)}
-                    className={`p-3 rounded-xl border-2 transition-colors ${
-                      selectedPreset === preset
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-gray-200 flex items-center justify-center">
-                      <User size={20} className="text-gray-500" />
-                    </div>
-                    <span className="text-xs font-medium text-gray-700">
-                      {preset === 'male' ? '男性' : preset === 'female' ? '女性' : 'バイ'}
-                    </span>
-                  </button>
-                ))}
+              <div className="mb-4">
+                <label className="flex items-center justify-center space-x-2 text-sm text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.hidePhoto}
+                    onChange={(e) => handleInputChange('hidePhoto', e.target.checked)}
+                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  />
+                  <span>写真を非表示にする</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  写真のかわりにアバターが表示されます（いつでも切替可能）
+                </p>
               </div>
 
-              {/* Hide Photo Option */}
-              <label className="flex items-center justify-center space-x-2 text-sm text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={formData.hidePhoto}
-                  onChange={(e) => handleInputChange('hidePhoto', e.target.checked)}
-                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
-                <span>写真を非表示にする</span>
-              </label>
+              {/* Avatar Type Dropdown */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  アバタータイプ
+                </label>
+                <select
+                  value={selectedPreset}
+                  onChange={(e) => handlePresetSelect(e.target.value as AvatarPreset)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                >
+                  <option value="male">男性</option>
+                  <option value="female">女性</option>
+                  <option value="bisexual">バイ</option>
+                </select>
+              </div>
             </div>
 
             {/* Display Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                名前
+                表示名 *
               </label>
               <input
                 type="text"
@@ -248,23 +277,46 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
                 onChange={(e) => handleInputChange('displayName', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
                 placeholder="あなたの名前"
-                maxLength={20}
+                maxLength={50}
+                required
               />
+              <div className="text-xs text-gray-500 mt-1 text-right">
+                {formData.displayName.length}/50
+              </div>
             </div>
 
-            {/* Age */}
+            {/* Gender Identity */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                年齢
+                性自認
               </label>
-              <input
-                type="number"
-                value={formData.age}
-                onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 25)}
+              <select
+                value={formData.genderIdentity}
+                onChange={(e) => handleInputChange('genderIdentity', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                min="18"
-                max="100"
-              />
+              >
+                <option value="">選択してください</option>
+                {GENDER_IDENTITY_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sexual Orientation */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                性的指向
+              </label>
+              <select
+                value={formData.sexualOrientation}
+                onChange={(e) => handleInputChange('sexualOrientation', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+              >
+                <option value="">選択してください</option>
+                {SEXUAL_ORIENTATION_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
             </div>
 
             {/* Bio */}
@@ -285,35 +337,151 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
               </div>
             </div>
 
+            {/* Personality Traits */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                性格 (最大5個)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {PERSONALITY_TRAITS.map((trait) => (
+                  <button
+                    key={trait}
+                    type="button"
+                    onClick={() => handlePersonalityToggle(trait)}
+                    className={`p-3 rounded-xl text-sm font-medium transition-colors ${
+                      formData.personalityTraits.includes(trait)
+                        ? 'bg-pink-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {trait}
+                  </button>
+                ))}
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                選択済み: {formData.personalityTraits.length}/5
+              </div>
+            </div>
+
             {/* Interest Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                趣味・興味（カンマ区切り）
+                興味・関心ごと (最大5個)
               </label>
-              <input
-                type="text"
-                value={formData.tags.join(', ')}
-                onChange={(e) => {
-                  const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-                  handleInputChange('tags', tags.slice(0, 8));
-                }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                placeholder="映画, 読書, 旅行..."
-              />
+              <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                {INTEREST_TAGS.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleTagToggle(tag)}
+                    className={`p-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.tags.includes(tag)
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                選択済み: {formData.tags.length}/5
+              </div>
             </div>
 
-            {/* Location */}
+            {/* Age Range */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                場所
+                年代 *
               </label>
-              <input
-                type="text"
+              <select
+                value={formData.ageRange}
+                onChange={(e) => handleInputChange('ageRange', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                required
+              >
+                <option value="">18歳以上の年代を選択してください</option>
+                {AGE_RANGE_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Prefecture */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                都道府県
+              </label>
+              <select
                 value={formData.city}
                 onChange={(e) => handleInputChange('city', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                placeholder="東京, 日本"
-              />
+              >
+                <option value="">都道府県を選択してください</option>
+                {PREFECTURES.map(prefecture => (
+                  <option key={prefecture} value={prefecture}>{prefecture}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Height */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                身長
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={formData.height}
+                  onChange={(e) => handleInputChange('height', parseInt(e.target.value) || 170)}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                  min="100"
+                  max="250"
+                />
+                <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                  cm
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                任意項目です。100-250cmの範囲で入力してください
+              </p>
+            </div>
+
+            {/* Body Style */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                スタイル・体型
+              </label>
+              <select
+                value={formData.bodyStyle}
+                onChange={(e) => handleInputChange('bodyStyle', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+              >
+                <option value="">選択してください</option>
+                {BODY_STYLE_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                この情報は任意です。プライバシー設定で非表示にもできます。
+              </p>
+            </div>
+
+            {/* Relationship Purpose */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                出会いの目的
+              </label>
+              <select
+                value={formData.relationshipPurpose}
+                onChange={(e) => handleInputChange('relationshipPurpose', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+              >
+                <option value="">選択してください</option>
+                {RELATIONSHIP_PURPOSE_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
             </div>
           </div>
 
