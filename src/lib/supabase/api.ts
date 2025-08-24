@@ -14,7 +14,7 @@ async function ensureProfileAuth(): Promise<{ user: any; profile: any; isSupabas
   const profile = JSON.parse(localProfile);
   const user = JSON.parse(localUser);
   
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured) {
     return {
       user,
       profile,
@@ -52,7 +52,7 @@ async function ensureProfileAuth(): Promise<{ user: any; profile: any; isSupabas
 // Profile API
 export const profileAPI = {
   async createProfile(profileData: any) {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabaseConfigured) {
       return profileData;
     }
 
@@ -72,7 +72,7 @@ export const profileAPI = {
   },
 
   async updateProfile(profileData: any) {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabaseConfigured) {
       return profileData;
     }
 
@@ -96,7 +96,7 @@ export const profileAPI = {
   },
 
   async searchProfiles(filters: any = {}) {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabaseConfigured) {
       return [];
     }
 
@@ -141,7 +141,7 @@ export const profileAPI = {
   },
 
   async uploadAvatar(file: File): Promise<string> {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabaseConfigured) {
       // フォールバック: Base64データURL
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
