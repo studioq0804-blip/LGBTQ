@@ -1,9 +1,5 @@
 import { supabase } from './client';
-
-// Supabase is now always configured
-function isSupabaseConfigured(): boolean {
-  return true;
-}
+import { isSupabaseConfigured } from './client';
 
 // プロフィールベースの認証（デモ対応）
 async function ensureProfileAuth(): Promise<{ user: any; profile: any; isSupabaseAuth: boolean }> {

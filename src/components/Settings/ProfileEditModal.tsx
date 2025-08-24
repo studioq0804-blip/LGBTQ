@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { X, Save, Camera } from 'lucide-react';
-import { profileAPI } from '../../lib/supabase';
+import { profileAPI } from '../../lib/supabase/api';
 import type { Profile } from '../../types';
 import { useLanguage } from '../../hooks/useLanguage';
 import { PREFECTURES, INTEREST_TAGS, BODY_STYLE_OPTIONS, RELATIONSHIP_PURPOSE_OPTIONS, PERSONALITY_TRAITS, AGE_RANGE_OPTIONS } from '../../lib/constants';
@@ -69,9 +69,12 @@ export function ProfileEditModal({ profile, onClose }: ProfileEditModalProps) {
       // Check if Supabase is properly configured
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      let dbProfile = finalData; // デフォルト値を設定
       try {
         // Supabaseでプロフィールを更新または作成
         console.log('Saving profile to Supabase:', finalData);
+        
+        const { supabase } = await import('../../lib/supabase/client');
         
         // 既存のプロフィールをチェック
         const { data: existingProfile } = await supabase
