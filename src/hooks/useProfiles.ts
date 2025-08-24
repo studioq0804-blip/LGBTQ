@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { profileAPI, matchingAPI } from '../lib/supabase/api';
-import { supabase } from '../lib/supabase/client';
+import { supabase, isSupabaseConfigured } from '../lib/supabase/client';
 import { getMockProfiles, profiles16 } from '../data/mockData';
 import type { Profile, MatchFilters } from '../types';
 
@@ -18,98 +18,101 @@ export function useProfiles() {
     setError(null);
     
     try {
-      // Try to get profiles from database
-      console.log('Fetching profiles from Supabase...');
-      
-      const { data: dbProfiles, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('is_visible', true)
-        .limit(50);
-      
-      if (error) {
-        console.error('Database query error:', error);
-        throw error;
-      }
-      
-      if (dbProfiles && dbProfiles.length > 0) {
-        // データベース形式からアプリ形式に変換
-        const convertedProfiles: Profile[] = dbProfiles.map(dbProfile => ({
-          id: dbProfile.id,
-          userId: dbProfile.user_id,
-          displayName: dbProfile.display_name || 'ユーザー',
-          genderIdentity: '', // Removed from database
-          sexualOrientation: '', // Removed from database
-          bio: dbProfile.bio || '',
-          age: 25,
-          ageRange: dbProfile.age_range || '',
-          city: dbProfile.city || '',
-          height: dbProfile.height,
-          bodyStyle: dbProfile.body_style || '',
-          relationshipPurpose: dbProfile.relationship_purpose || '',
-          personalityTraits: dbProfile.personality_traits || [],
-          tags: dbProfile.tags || [],
-          joinedCommunities: [],
-          photos: [],
-          avatarUrl: dbProfile.avatar_url || '',
-          isVisible: dbProfile.is_visible,
-          lastActive: dbProfile.last_active || new Date().toISOString(),
-          privacy: dbProfile.privacy_settings || {
-            showAge: true,
-            showCity: true,
-            showHeight: true,
-            showBodyStyle: true,
-            showTags: true,
-            showBio: true
-          }
-        }));
+      if (isSupabaseConfigured && supabase) {
+        // Try to get profiles from database
+        console.log('Fetching profiles from Supabase...');
         
-        // ローカルストレージから現在のユーザープロフィールを取得して統合
-        const currentProfile = localStorage.getItem('rainbow-match-profile');
-        if (currentProfile) {
-          try {
-            const parsedProfile = JSON.parse(currentProfile);
-            // 既存のプロフィールを更新または追加
-            const existingIndex = convertedProfiles.findIndex(p => p.userId === parsedProfile.userId);
-            if (existingIndex >= 0) {
-              convertedProfiles[existingIndex] = parsedProfile;
-            } else {
-              convertedProfiles.unshift(parsedProfile);
-            }
-          } catch (parseError) {
-            console.warn('Failed to parse current profile:', parseError);
-          }
+        const { data: dbProfiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('is_visible', true)
+          .limit(50);
+        
+        if (error) {
+          console.error('Database query error:', error);
+          throw error;
         }
         
-        console.log('Database profiles loaded:', convertedProfiles.length);
-        setProfiles(convertedProfiles);
-      } else {
-        // Database is empty, use mock data
-        console.log('Database is empty, using mock data with current user:', profiles16.length);
-        
-        const currentProfile = localStorage.getItem('rainbow-match-profile');
-        let allProfiles = [...profiles16];
-        
-        if (currentProfile) {
-          try {
-            const parsedProfile = JSON.parse(currentProfile);
-            // 既存のプロフィールを更新または追加
-            const existingIndex = allProfiles.findIndex(p => p.userId === parsedProfile.userId);
-            if (existingIndex >= 0) {
-              allProfiles[existingIndex] = parsedProfile;
-            } else {
-              allProfiles.unshift(parsedProfile);
+        if (dbProfiles && dbProfiles.length > 0) {
+          // データベース形式からアプリ形式に変換
+          const convertedProfiles: Profile[] = dbProfiles.map(dbProfile => ({
+            id: dbProfile.id,
+            userId: dbProfile.user_id,
+            displayName: dbProfile.display_name || 'ユーザー',
+            genderIdentity: '', // Removed from database
+            sexualOrientation: '', // Removed from database
+            bio: dbProfile.bio || '',
+            age: 25,
+            ageRange: dbProfile.age_range || '',
+            city: dbProfile.city || '',
+            height: dbProfile.height,
+            bodyStyle: dbProfile.body_style || '',
+            relationshipPurpose: dbProfile.relationship_purpose || '',
+            personalityTraits: dbProfile.personality_traits || [],
+            tags: dbProfile.tags || [],
+            joinedCommunities: [],
+            photos: [],
+            avatarUrl: dbProfile.avatar_url || '',
+            isVisible: dbProfile.is_visible,
+            lastActive: dbProfile.last_active || new Date().toISOString(),
+            privacy: dbProfile.privacy_settings || {
+              showAge: true,
+              showCity: true,
+              showHeight: true,
+              showBodyStyle: true,
+              showTags: true,
+              showBio: true
             }
-          } catch (parseError) {
-            console.warn('Failed to parse current profile:', parseError);
+          }));
+          
+          // ローカルストレージから現在のユーザープロフィールを取得して統合
+          const currentProfile = localStorage.getItem('rainbow-match-profile');
+          if (currentProfile) {
+            try {
+              const parsedProfile = JSON.parse(currentProfile);
+              // 既存のプロフィールを更新または追加
+              const existingIndex = convertedProfiles.findIndex(p => p.userId === parsedProfile.userId);
+              if (existingIndex >= 0) {
+                convertedProfiles[existingIndex] = parsedProfile;
+              } else {
+                convertedProfiles.unshift(parsedProfile);
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse current profile:', parseError);
+            }
           }
+          
+          console.log('Database profiles loaded:', convertedProfiles.length);
+          setProfiles(convertedProfiles);
+          return;
         }
-        
-        setProfiles(allProfiles);
       }
+      
+      // Fallback to mock data (when Supabase not configured or database is empty)
+      console.log('Using mock data with current user:', profiles16.length);
+      
+      const currentProfile = localStorage.getItem('rainbow-match-profile');
+      let allProfiles = [...profiles16];
+      
+      if (currentProfile) {
+        try {
+          const parsedProfile = JSON.parse(currentProfile);
+          // 既存のプロフィールを更新または追加
+          const existingIndex = allProfiles.findIndex(p => p.userId === parsedProfile.userId);
+          if (existingIndex >= 0) {
+            allProfiles[existingIndex] = parsedProfile;
+          } else {
+            allProfiles.unshift(parsedProfile);
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse current profile:', parseError);
+        }
+      }
+      
+      setProfiles(allProfiles);
     } catch (err) {
       console.error('プロフィール検索エラー:', err);
-      setError(`プロフィールの取得に失敗しました: ${err.message}`);
+      setError(`プロフィールの取得に失敗しました: ${err.message || err}`);
       
       // Fallback to mock data on error
       console.log('Error occurred, falling back to mock data:', profiles16.length);
