@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { profileAPI, matchingAPI } from '../lib/supabase/api';
+import { supabase } from '../lib/supabase/client';
 import { getMockProfiles, profiles16 } from '../data/mockData';
 import type { Profile, MatchFilters } from '../types';
 
