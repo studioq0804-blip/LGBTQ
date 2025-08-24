@@ -150,7 +150,18 @@ export function SettingsPage({ onLogout }: SettingsPageProps) {
 
       {/* モーダル */}
       {activeModal === 'profile' && profile && (
-        <ProfileEditModal profile={profile} onClose={closeModal} />
+        <ProfileEditModal 
+          isOpen={true}
+          profile={profile} 
+          onClose={closeModal}
+          onProfileUpdate={(updatedProfile) => {
+            // Update localStorage with new profile data
+            localStorage.setItem('rainbow-match-profile', JSON.stringify(updatedProfile));
+            // Dispatch event to notify other components
+            window.dispatchEvent(new Event('rainbow-profile-updated'));
+            closeModal();
+          }}
+        />
       )}
 
       {activeModal === 'privacy' && (
