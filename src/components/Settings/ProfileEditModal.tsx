@@ -228,18 +228,34 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
             {/* Avatar Section */}
             <div className="text-center">
               <div className="relative w-24 h-24 mx-auto mb-4">
-                <div className="w-full h-full bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden">
-                  <div className="w-16 h-16 bg-teal-600 rounded-full flex items-center justify-center">
-                    <div className="w-8 h-8 bg-white rounded-full"></div>
-                    <div className="absolute bottom-2 w-12 h-6 bg-teal-600 rounded-t-full"></div>
+                {formData.avatarUrl ? (
+                  <img
+                    src={formData.avatarUrl}
+                    alt="プロフィール写真"
+                    className="w-full h-full rounded-2xl object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden">
+                    <div className="w-16 h-16 bg-teal-600 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-white rounded-full"></div>
+                      <div className="absolute bottom-2 w-12 h-6 bg-teal-600 rounded-t-full"></div>
+                    </div>
                   </div>
-                </div>
-                <button
+                )}
+                <label
+                  htmlFor="avatar-upload"
                   type="button"
-                  className="absolute bottom-0 right-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white hover:bg-purple-700 transition-colors"
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white hover:bg-purple-700 transition-colors cursor-pointer"
                 >
                   <Camera size={16} />
-                </button>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
               </div>
 
               <div className="mb-4">
