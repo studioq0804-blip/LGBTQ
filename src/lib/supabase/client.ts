@@ -8,7 +8,9 @@ const isSupabaseConfigured = Boolean(
   supabaseUrl && 
   supabaseAnonKey && 
   supabaseUrl !== 'https://your-project.supabase.co' &&
+  supabaseUrl !== 'https://demo-placeholder.supabase.co' &&
   supabaseAnonKey !== 'your-anon-key' &&
+  supabaseAnonKey !== 'demo-placeholder-key' &&
   supabaseUrl.includes('supabase.co') &&
   supabaseAnonKey.length > 50 // JWT tokens are typically longer
 );
