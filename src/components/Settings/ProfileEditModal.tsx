@@ -228,11 +228,19 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
             {/* Avatar Section */}
             <div className="text-center">
               <div className="relative w-24 h-24 mx-auto mb-4">
-                {formData.avatarUrl ? (
+                {formData.hidePhoto ? (
                   <img
-                    src={formData.avatarUrl}
+                    src={getPresetAvatarDataUrl(selectedPreset, 512)}
+                    alt="アバター"
+                    className="w-full h-full rounded-2xl object-cover"
+                  />
+                ) : (
+                  <img
+                    src={formData.avatarUrl || getPresetAvatarDataUrl(selectedPreset, 512)}
                     alt="プロフィール写真"
                     className="w-full h-full rounded-2xl object-cover"
+                  />
+                )}
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden">
@@ -243,19 +251,21 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
                   </div>
                 )}
                 <label
-                  htmlFor="avatar-upload"
-                  type="button"
-                  className="absolute bottom-0 right-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white hover:bg-purple-700 transition-colors cursor-pointer"
-                >
-                  <Camera size={16} />
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
+                {!formData.hidePhoto && (
+                  <label
+                    htmlFor="avatar-upload"
+                    className="absolute bottom-0 right-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white hover:bg-purple-700 transition-colors cursor-pointer"
+                  >
+                    <Camera size={16} />
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
 
               <div className="mb-4">
@@ -269,25 +279,27 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
                   <span>写真を非表示にする</span>
                 </label>
                 <p className="text-xs text-gray-500 mt-1">
-                  写真のかわりにアバターが表示されます（いつでも切替可能）
+                  {formData.hidePhoto ? 'アバターが表示されます（いつでも切替可能）' : '写真のかわりにアバターが表示されます（いつでも切替可能）'}
                 </p>
               </div>
 
-              {/* Avatar Type Dropdown */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  アバタータイプ
-                </label>
-                <select
-                  value={selectedPreset}
-                  onChange={(e) => handlePresetSelect(e.target.value as AvatarPreset)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                >
-                  <option value="male">男性</option>
-                  <option value="female">女性</option>
-                  <option value="bisexual">バイ</option>
-                </select>
-              </div>
+              {/* Avatar Type Dropdown - Only show when photo is hidden */}
+              {formData.hidePhoto && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    アバタータイプ
+                  </label>
+                  <select
+                    value={selectedPreset}
+                    onChange={(e) => handlePresetSelect(e.target.value as AvatarPreset)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                  >
+                    <option value="male">男性</option>
+                    <option value="female">女性</option>
+                    <option value="bisexual">バイ</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Display Name */}
