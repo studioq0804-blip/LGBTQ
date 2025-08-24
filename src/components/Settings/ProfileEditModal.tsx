@@ -241,16 +241,6 @@ export function ProfileEditModal({ isOpen, onClose, profile, onProfileUpdate }: 
                     className="w-full h-full rounded-2xl object-cover"
                   />
                 )}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden">
-                    <div className="w-16 h-16 bg-teal-600 rounded-full flex items-center justify-center">
-                      <div className="w-8 h-8 bg-white rounded-full"></div>
-                      <div className="absolute bottom-2 w-12 h-6 bg-teal-600 rounded-t-full"></div>
-                    </div>
-                  </div>
-                )}
-                <label
                 {!formData.hidePhoto && (
                   <label
                     htmlFor="avatar-upload"
