@@ -42,27 +42,6 @@ export const profileAPI = {
   },
 
   async uploadAvatar(file: File): Promise<string> {
-    // Check if Supabase is properly configured
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey || 
-        supabaseUrl === 'https://your-project.supabase.co' || 
-        supabaseAnonKey === 'your-anon-key') {
-      // Supabase未設定時はBase64データURLを返す
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result);
-        };
-        reader.onerror = () => {
-          reject(new Error('ファイルの読み込みに失敗しました'));
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
@@ -80,7 +59,8 @@ export const profileAPI = {
 
       return data.publicUrl;
     } catch (error) {
-      // Supabase Storage失敗時もBase64フォールバック
+      console.error('Supabase storage upload failed:', error);
+      // Fallback to Base64 data URL
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {

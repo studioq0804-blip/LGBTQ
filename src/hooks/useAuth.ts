@@ -75,20 +75,18 @@ export function useAuth() {
   // サインアップ（OTP送信）
   const signup = useCallback(async (email: string) => {
     try {
-      // Check if Supabase is configured
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      // Supabase auth signup
+      const { error } = await supabase.auth.signUp({
+        email,
+        password: 'temp-password-123', // In real app, generate secure password
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
       
-      if (supabaseUrl && supabaseAnonKey && 
-          supabaseUrl !== 'https://your-project.supabase.co' && 
-          supabaseAnonKey !== 'your-anon-key') {
-        // Try Supabase auth
-        const { error } = await supabase.auth.signUp({
-          email,
-          password: 'temp-password' // In real app, generate secure password
-        });
-        
-        if (error) throw error;
+      if (error) {
+        console.error('Supabase signup error:', error);
+        // Continue with demo mode for development
       }
       
       // デモ用: 常に成功
@@ -129,6 +127,57 @@ export function useAuth() {
   const login = useCallback(async (email: string, code: string, trustDevice: boolean = false) => {
     try {
       console.log('Login attempt:', { email, code, trustDevice });
+      
+      // Try Supabase auth first
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password: 'temp-password-123'
+        });
+        
+        if (data.user && !error) {
+          console.log('Supabase login successful:', data.user);
+          
+          // Get or create profile
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', data.user.id)
+            .single();
+          
+          let profile: Profile;
+          if (existingProfile) {
+            profile = convertDbProfileToApp(existingProfile);
+          } else {
+            profile = createDefaultProfile(data.user.id);
+          }
+          
+          const user: User = {
+            id: data.user.id,
+            email: data.user.email || email,
+            isVerified: true,
+            createdAt: data.user.created_at
+          };
+          
+          // Save to localStorage for consistency
+          localStorage.setItem('rainbow-match-user', JSON.stringify(user));
+          localStorage.setItem('rainbow-match-profile', JSON.stringify(profile));
+          localStorage.setItem('rainbow-match-kyc-completed', 'true');
+          
+          setAuthState({
+            user,
+            profile,
+            isAuthenticated: true,
+            isKYCCompleted: true,
+            isLoading: false
+          });
+          
+          window.dispatchEvent(new Event('rainbow-auth-updated'));
+          return { ok: true };
+        }
+      } catch (supabaseError) {
+        console.log('Supabase login failed, using demo mode:', supabaseError);
+      }
       
       // デモ用: 123456で認証成功
       if (code === '123456') {
@@ -193,6 +242,40 @@ export function useAuth() {
       return { ok: false, error: 'ログインに失敗しました' };
     }
   }, []);
+
+  // Convert database profile to app format
+  const convertDbProfileToApp = (dbProfile: any): Profile => {
+    return {
+      id: dbProfile.id,
+      userId: dbProfile.user_id,
+      displayName: dbProfile.display_name || 'ユーザー',
+      genderIdentity: dbProfile.gender_identity || '',
+      sexualOrientation: dbProfile.sexual_orientation || '',
+      bio: dbProfile.bio || '',
+      age: 25, // Default age
+      ageRange: dbProfile.age_range || '',
+      city: dbProfile.city || '',
+      height: dbProfile.height,
+      bodyStyle: dbProfile.body_style || '',
+      relationshipPurpose: dbProfile.relationship_purpose || '',
+      personalityTraits: dbProfile.personality_traits || [],
+      tags: dbProfile.tags || [],
+      joinedCommunities: [],
+      photos: [],
+      avatarUrl: dbProfile.avatar_url || '',
+      isVisible: dbProfile.is_visible !== false,
+      lastActive: dbProfile.last_active || new Date().toISOString(),
+      privacy: dbProfile.privacy_settings || {
+        showAge: true,
+        showCity: true,
+        showHeight: true,
+        showBodyStyle: true,
+        showTags: true,
+        showBio: true,
+        hidePhoto: false
+      }
+    };
+  };
 
   // デフォルトプロフィール作成ヘルパー
   const createDefaultProfile = (userId: string): Profile => {
@@ -304,7 +387,7 @@ export function useAuth() {
   // ログアウト
   const logout = useCallback(async () => {
     try {
-      // Supabaseからログアウト
+      // Supabase logout
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Supabase logout error:', error);

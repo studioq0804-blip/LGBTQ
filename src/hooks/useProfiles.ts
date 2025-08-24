@@ -17,73 +17,18 @@ export function useProfiles() {
     setError(null);
     
     try {
-      // Check if Supabase is properly configured
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseAnonKey || 
-          supabaseUrl === 'https://your-project.supabase.co' || 
-          supabaseAnonKey === 'your-anon-key') {
-        // Supabase未設定時はローカルモックデータを使用
-        console.log('Supabase not configured, using local mock data');
-        
-        // ローカルストレージから現在のユーザープロフィールを取得
-        const currentProfile = localStorage.getItem('rainbow-match-profile');
-        let allProfiles = [...profiles16];
-        
-        if (currentProfile) {
-          try {
-            const parsedProfile = JSON.parse(currentProfile);
-            // 既存のプロフィールを更新または追加
-            const existingIndex = allProfiles.findIndex(p => p.userId === parsedProfile.userId);
-            if (existingIndex >= 0) {
-              allProfiles[existingIndex] = parsedProfile;
-            } else {
-              allProfiles.unshift(parsedProfile);
-            }
-          } catch (parseError) {
-            console.warn('Failed to parse current profile:', parseError);
-          }
-        }
-        
-        setProfiles(profiles16);
-        setIsLoading(false);
-        return;
-      }
-
       // Try to get profiles from database
       console.log('Fetching profiles from Supabase...');
       
-      let query = supabase
+      const { data: dbProfiles, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('is_visible', true);
-
-      // フィルターを適用
-      if (filters?.ageRanges?.length) {
-        query = query.in('age_range', filters.ageRanges);
-      }
-      if (filters?.prefectures?.length) {
-        query = query.in('city', filters.prefectures);
-      }
-      if (filters?.relationshipPurposes?.length) {
-        query = query.in('relationship_purpose', filters.relationshipPurposes);
-      }
-      if (filters?.sexualOrientations?.length) {
-        query = query.or(
-          filters.sexualOrientations.map(orientation => 
-            `sexual_orientation.ilike.%${orientation}%`
-          ).join(',')
-        );
-      }
-
-      query = query.limit(50);
-
-      const { data: dbProfiles, error: dbError } = await query;
+        .eq('is_visible', true)
+        .limit(50);
       
-      if (dbError) {
-        console.error('Database query error:', dbError);
-        throw dbError;
+      if (error) {
+        console.error('Database query error:', error);
+        throw error;
       }
       
       if (dbProfiles && dbProfiles.length > 0) {
@@ -91,9 +36,9 @@ export function useProfiles() {
         const convertedProfiles: Profile[] = dbProfiles.map(dbProfile => ({
           id: dbProfile.id,
           userId: dbProfile.user_id,
-          displayName: dbProfile.display_name || '',
-          genderIdentity: dbProfile.gender_identity || '',
-          sexualOrientation: dbProfile.sexual_orientation || '',
+          displayName: dbProfile.display_name || 'ユーザー',
+          genderIdentity: '', // Removed from database
+          sexualOrientation: '', // Removed from database
           bio: dbProfile.bio || '',
           age: 25,
           ageRange: dbProfile.age_range || '',
@@ -107,17 +52,14 @@ export function useProfiles() {
           photos: [],
           avatarUrl: dbProfile.avatar_url || '',
           isVisible: dbProfile.is_visible,
-          lastActive: dbProfile.last_active,
+          lastActive: dbProfile.last_active || new Date().toISOString(),
           privacy: dbProfile.privacy_settings || {
-            showGenderIdentity: true,
-            showSexualOrientation: true,
             showAge: true,
             showCity: true,
             showHeight: true,
             showBodyStyle: true,
             showTags: true,
-            showBio: true,
-            hidePhoto: false
+            showBio: true
           }
         }));
         
@@ -141,7 +83,7 @@ export function useProfiles() {
         console.log('Database profiles loaded:', convertedProfiles.length);
         setProfiles(convertedProfiles);
       } else {
-        // データベースが空の場合はモックデータ + 現在のユーザーを使用
+        // Database is empty, use mock data
         console.log('Database is empty, using mock data with current user:', profiles16.length);
         
         const currentProfile = localStorage.getItem('rainbow-match-profile');
@@ -166,9 +108,9 @@ export function useProfiles() {
       }
     } catch (err) {
       console.error('プロフィール検索エラー:', err);
-      setError('プロフィールの取得に失敗しました');
+      setError(`プロフィールの取得に失敗しました: ${err.message}`);
       
-      // エラー時はモックデータにフォールバック
+      // Fallback to mock data on error
       console.log('Error occurred, falling back to mock data:', profiles16.length);
       
       const currentProfile = localStorage.getItem('rainbow-match-profile');

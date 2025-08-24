@@ -1,16 +1,8 @@
 import { supabase } from './client';
 
-// Supabaseが適切に設定されているかチェック
+// Supabase is now always configured
 function isSupabaseConfigured(): boolean {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  
-  return !!(
-    supabaseUrl && 
-    supabaseAnonKey && 
-    supabaseUrl !== 'https://your-project.supabase.co' && 
-    supabaseAnonKey !== 'your-anon-key'
-  );
+  return true;
 }
 
 // プロフィールベースの認証（デモ対応）

@@ -69,52 +69,45 @@ export function ProfileEditModal({ profile, onClose }: ProfileEditModalProps) {
       // Check if Supabase is properly configured
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      let dbProfile = finalData;
-      
-      if (supabaseUrl && supabaseAnonKey && 
-          supabaseUrl !== 'https://your-project.supabase.co' && 
-          supabaseAnonKey !== 'your-anon-key') {
-        try {
-          // Supabaseでプロフィールを更新または作成
-          console.log('Saving profile to Supabase:', finalData);
-          
-          // 既存のプロフィールをチェック
-          const { data: existingProfile } = await supabase
+      try {
+        // Supabaseでプロフィールを更新または作成
+        console.log('Saving profile to Supabase:', finalData);
+        
+        // 既存のプロフィールをチェック
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+        
+        if (existingProfile) {
+          // 更新
+          const { data: updatedProfile, error } = await supabase
             .from('profiles')
-            .select('*')
+            .update(finalData)
             .eq('user_id', userId)
+            .select()
             .single();
           
-          if (existingProfile) {
-            // 更新
-            const { data: updatedProfile, error } = await supabase
-              .from('profiles')
-              .update(finalData)
-              .eq('user_id', userId)
-              .select()
-              .single();
-            
-            if (error) throw error;
-            dbProfile = updatedProfile;
-            console.log('Profile updated in Supabase:', updatedProfile);
-          } else {
-            // 新規作成
-            const { data: newProfile, error } = await supabase
-              .from('profiles')
-              .insert([finalData])
-              .select()
-              .single();
-            
-            if (error) throw error;
-            dbProfile = newProfile;
-            console.log('Profile created in Supabase:', newProfile);
-          }
-        } catch (supabaseError) {
-          console.error('Supabase save failed:', supabaseError);
-          console.log('Using local fallback');
-          // フォールバック: ローカルデータを使用
+          if (error) throw error;
+          dbProfile = updatedProfile;
+          console.log('Profile updated in Supabase:', updatedProfile);
+        } else {
+          // 新規作成
+          const { data: newProfile, error } = await supabase
+            .from('profiles')
+            .insert([finalData])
+            .select()
+            .single();
+          
+          if (error) throw error;
+          dbProfile = newProfile;
+          console.log('Profile created in Supabase:', newProfile);
         }
+      } catch (supabaseError) {
+        console.error('Supabase save failed:', supabaseError);
+        console.log('Using local fallback');
+        // フォールバック: ローカルデータを使用
       }
       
       // アプリ形式に変換
