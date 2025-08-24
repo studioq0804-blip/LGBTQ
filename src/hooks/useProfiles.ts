@@ -26,19 +26,65 @@ export function useProfiles() {
           supabaseAnonKey === 'your-anon-key') {
         // Supabase未設定時はローカルモックデータを使用
         console.log('Supabase not configured, using local mock data');
+        
+        // ローカルストレージから現在のユーザープロフィールを取得
+        const currentProfile = localStorage.getItem('rainbow-match-profile');
+        let allProfiles = [...profiles16];
+        
+        if (currentProfile) {
+          try {
+            const parsedProfile = JSON.parse(currentProfile);
+            // 既存のプロフィールを更新または追加
+            const existingIndex = allProfiles.findIndex(p => p.userId === parsedProfile.userId);
+            if (existingIndex >= 0) {
+              allProfiles[existingIndex] = parsedProfile;
+            } else {
+              allProfiles.unshift(parsedProfile);
+            }
+          } catch (parseError) {
+            console.warn('Failed to parse current profile:', parseError);
+          }
+        }
+        
         setProfiles(profiles16);
         setIsLoading(false);
         return;
       }
 
       // Try to get profiles from database
-      const dbProfiles = await profileAPI.searchProfiles({
-        ageRanges: filters?.ageRanges || [],
-        cities: filters?.prefectures || [],
-        relationshipPurposes: filters?.relationshipPurposes || [],
-        sexualOrientations: filters?.sexualOrientations || [],
-        limit: 50
-      });
+      console.log('Fetching profiles from Supabase...');
+      
+      let query = supabase
+        .from('profiles')
+        .select('*')
+        .eq('is_visible', true);
+
+      // フィルターを適用
+      if (filters?.ageRanges?.length) {
+        query = query.in('age_range', filters.ageRanges);
+      }
+      if (filters?.prefectures?.length) {
+        query = query.in('city', filters.prefectures);
+      }
+      if (filters?.relationshipPurposes?.length) {
+        query = query.in('relationship_purpose', filters.relationshipPurposes);
+      }
+      if (filters?.sexualOrientations?.length) {
+        query = query.or(
+          filters.sexualOrientations.map(orientation => 
+            `sexual_orientation.ilike.%${orientation}%`
+          ).join(',')
+        );
+      }
+
+      query = query.limit(50);
+
+      const { data: dbProfiles, error: dbError } = await query;
+      
+      if (dbError) {
+        console.error('Database query error:', dbError);
+        throw dbError;
+      }
       
       if (dbProfiles && dbProfiles.length > 0) {
         // データベース形式からアプリ形式に変換
@@ -75,12 +121,48 @@ export function useProfiles() {
           }
         }));
         
+        // ローカルストレージから現在のユーザープロフィールを取得して統合
+        const currentProfile = localStorage.getItem('rainbow-match-profile');
+        if (currentProfile) {
+          try {
+            const parsedProfile = JSON.parse(currentProfile);
+            // 既存のプロフィールを更新または追加
+            const existingIndex = convertedProfiles.findIndex(p => p.userId === parsedProfile.userId);
+            if (existingIndex >= 0) {
+              convertedProfiles[existingIndex] = parsedProfile;
+            } else {
+              convertedProfiles.unshift(parsedProfile);
+            }
+          } catch (parseError) {
+            console.warn('Failed to parse current profile:', parseError);
+          }
+        }
+        
         console.log('Database profiles loaded:', convertedProfiles.length);
         setProfiles(convertedProfiles);
       } else {
-        // データベースが空の場合はモックデータを使用
-        console.log('Database is empty, using mock data:', profiles16.length);
-        setProfiles(profiles16);
+        // データベースが空の場合はモックデータ + 現在のユーザーを使用
+        console.log('Database is empty, using mock data with current user:', profiles16.length);
+        
+        const currentProfile = localStorage.getItem('rainbow-match-profile');
+        let allProfiles = [...profiles16];
+        
+        if (currentProfile) {
+          try {
+            const parsedProfile = JSON.parse(currentProfile);
+            // 既存のプロフィールを更新または追加
+            const existingIndex = allProfiles.findIndex(p => p.userId === parsedProfile.userId);
+            if (existingIndex >= 0) {
+              allProfiles[existingIndex] = parsedProfile;
+            } else {
+              allProfiles.unshift(parsedProfile);
+            }
+          } catch (parseError) {
+            console.warn('Failed to parse current profile:', parseError);
+          }
+        }
+        
+        setProfiles(allProfiles);
       }
     } catch (err) {
       console.error('プロフィール検索エラー:', err);
@@ -88,7 +170,25 @@ export function useProfiles() {
       
       // エラー時はモックデータにフォールバック
       console.log('Error occurred, falling back to mock data:', profiles16.length);
-      setProfiles(profiles16);
+      
+      const currentProfile = localStorage.getItem('rainbow-match-profile');
+      let allProfiles = [...profiles16];
+      
+      if (currentProfile) {
+        try {
+          const parsedProfile = JSON.parse(currentProfile);
+          const existingIndex = allProfiles.findIndex(p => p.userId === parsedProfile.userId);
+          if (existingIndex >= 0) {
+            allProfiles[existingIndex] = parsedProfile;
+          } else {
+            allProfiles.unshift(parsedProfile);
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse current profile:', parseError);
+        }
+      }
+      
+      setProfiles(allProfiles);
     } finally {
       setIsLoading(false);
     }

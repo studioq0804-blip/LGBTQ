@@ -89,18 +89,21 @@ export const profileAPI = {
     }
 
     try {
+      console.log('Updating profile in Supabase:', profileData);
+      
       const { data, error } = await supabase
         .from('profiles')
         .update(profileData)
-        .eq('user_id', profileData.user_id || 'current-user')
+        .eq('user_id', profileData.user_id)
         .select()
         .single();
       
       if (error) throw error;
+      console.log('Profile updated successfully:', data);
       return data;
     } catch (error) {
-      console.warn('Profile update failed, using local data:', error);
-      return profileData;
+      console.error('Profile update failed:', error);
+      throw error;
     }
   },
 

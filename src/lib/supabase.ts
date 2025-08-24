@@ -6,29 +6,47 @@ export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
 );
 
+import { createClient } from '@supabase/supabase-js';
+
+// Supabaseクライアントの初期化
+export const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+);
+
 // プロフィールAPI
 export const profileAPI = {
   async createProfile(profileData: any) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([profileData])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([profileData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Profile creation failed:', error);
+      throw error;
+    }
   },
 
   async updateProfile(profileData: any) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(profileData)
-      .eq('user_id', profileData.user_id || (await supabase.auth.getUser()).data.user?.id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('user_id', profileData.user_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      throw error;
+    }
   },
 
   async uploadAvatar(file: File): Promise<string> {

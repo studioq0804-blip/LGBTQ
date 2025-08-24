@@ -40,7 +40,16 @@ export function ProfileEditModal({ profile, onClose }: ProfileEditModalProps) {
     setIsLoading(true);
     
     try {
+      // 現在のユーザーIDを取得
+      const currentUser = JSON.parse(localStorage.getItem('rainbow-match-user') || '{}');
+      const userId = currentUser.id;
+      
+      if (!userId) {
+        throw new Error('ユーザーIDが見つかりません');
+      }
+
       const finalData = {
+        user_id: userId,
         display_name: formData.displayName,
         bio: formData.bio,
         age_range: formData.ageRange,
@@ -67,10 +76,43 @@ export function ProfileEditModal({ profile, onClose }: ProfileEditModalProps) {
           supabaseUrl !== 'https://your-project.supabase.co' && 
           supabaseAnonKey !== 'your-anon-key') {
         try {
-          // Supabaseでプロフィールを更新
-          dbProfile = await profileAPI.updateProfile(finalData);
+          // Supabaseでプロフィールを更新または作成
+          console.log('Saving profile to Supabase:', finalData);
+          
+          // 既存のプロフィールをチェック
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+          
+          if (existingProfile) {
+            // 更新
+            const { data: updatedProfile, error } = await supabase
+              .from('profiles')
+              .update(finalData)
+              .eq('user_id', userId)
+              .select()
+              .single();
+            
+            if (error) throw error;
+            dbProfile = updatedProfile;
+            console.log('Profile updated in Supabase:', updatedProfile);
+          } else {
+            // 新規作成
+            const { data: newProfile, error } = await supabase
+              .from('profiles')
+              .insert([finalData])
+              .select()
+              .single();
+            
+            if (error) throw error;
+            dbProfile = newProfile;
+            console.log('Profile created in Supabase:', newProfile);
+          }
         } catch (supabaseError) {
-          console.log('Supabase update failed, using local fallback');
+          console.error('Supabase save failed:', supabaseError);
+          console.log('Using local fallback');
           // フォールバック: ローカルデータを使用
         }
       }
@@ -78,6 +120,7 @@ export function ProfileEditModal({ profile, onClose }: ProfileEditModalProps) {
       // アプリ形式に変換
       const updatedProfile: Profile = {
         ...profile,
+        userId: userId,
         displayName: dbProfile.display_name || profile.displayName,
         bio: dbProfile.bio || '',
         ageRange: dbProfile.age_range || '',
@@ -105,10 +148,12 @@ export function ProfileEditModal({ profile, onClose }: ProfileEditModalProps) {
       // 一覧更新用のカスタムイベントを発火
       window.dispatchEvent(new CustomEvent('rainbow-profile-updated', { detail: { id: profile.id } }));
 
+      // 成功メッセージ
+      alert('プロフィールを保存しました！');
       onClose();
     } catch (error) {
       console.error('プロフィール更新エラー:', error);
-      alert('プロフィールの更新に失敗しました');
+      alert(`プロフィールの更新に失敗しました: ${error.message || error}`);
     } finally {
       setIsLoading(false);
     }
