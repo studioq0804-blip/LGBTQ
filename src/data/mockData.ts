@@ -283,7 +283,7 @@ export const profiles16: Profile[] = [
     tags: ['音楽', 'プロデュース', 'レコーディング', 'ライブ'],
     joinedCommunities: ['community-1', 'community-3'],
     photos: [],
-    avatarUrl: 'https://images.pexels.com/photos/1065084/pexels-photo-1065084.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop',
+    avatarUrl: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop',
     isVisible: true,
     lastActive: new Date().toISOString(),
     privacy: {
