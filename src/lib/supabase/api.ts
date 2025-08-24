@@ -37,6 +37,17 @@ async function ensureProfileAuth(): Promise<{ user: any; profile: any; isSupabas
     return {
       user,
       profile,
+      isSupabaseAuth: false
+    };
+  } catch (error) {
+    console.error('Profile auth error:', error);
+    return {
+      user,
+      profile,
+      isSupabaseAuth: false
+    };
+  }
+}
 
 // Profile API
 export const profileAPI = {
